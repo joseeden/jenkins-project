@@ -1,19 +1,10 @@
 pipeline {
     agent any
-    environment {
-        IMAGE_NAME = 'sanjeevkt720/jenkins-flask-app'
-        IMAGE_TAG = "${IMAGE_NAME}:${env.BUILD_NUMBER}"
-        KUBECONFIG = credentials('kubeconfig-credentials-id')
 
+    environment {
+        SERVER_IP = credentials('prod-server-ip')
     }
     stages {
-
-        stage('Checkout') {
-            steps {
-                git url: 'https://github.com/kodekloudhub/jenkins-project.git', branch: 'main'
-                sh "ls -ltr"
-            }
-        }
         stage('Setup') {
             steps {
                 sh "pip install -r requirements.txt"
@@ -22,38 +13,35 @@ pipeline {
         stage('Test') {
             steps {
                 sh "pytest"
-                sh "whoami"
             }
         }
-        stage('Login to docker hub') {
+
+        stage('Package code') {
             steps {
-                withCredentials([string(credentialsId: 'dockerhubpwd', variable: 'dockerhubpwd')]) {
-                sh 'echo ${dockerhubpwd} | docker login -u sanjeevkt720 --password-stdin'}
-                echo 'Login successfully'
+                sh "zip -r myapp.zip ./* -x '*.git*'"
+                sh "ls -lart"
             }
         }
-        stage('Build Docker Image')
-        {
-            steps
-            {
-                sh 'docker build -t ${IMAGE_TAG} .'
-                echo "Docker image build successfully"
-                sh "docker images"
-            }
-        }
-        stage('Push Docker Image')
-        {
-            steps
-            {
-                sh 'docker push ${IMAGE_TAG}'
-                echo "Docker image push successfully"
-            }
-        }
-        stage('Deploy to EKS Cluster') {
+
+        stage('Deploy to Prod') {
             steps {
-                sh "kubectl apply -f deployment.yaml"
-                echo "Deployed to EKS Cluster"
+                withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'MY_SSH_KEY', usernameVariable: 'username')]) {
+                    sh '''
+                    scp -i $MY_SSH_KEY -o StrictHostKeyChecking=no myapp.zip  ${username}@${SERVER_IP}:/opt/
+                    ssh -i $MY_SSH_KEY -o StrictHostKeyChecking=no ${username}@${SERVER_IP} << EOF
+                        unzip -o /opt/myapp.zip -d /opt/app/
+                        source app/venv/bin/activate
+                        cd /opt/app/
+                        pip install -r requirements.txt
+                        sudo service flaskapp restart
+                    EOF
+                    '''
+                }
             }
         }
+    
+        
+    
+        
     }
-}
+} 
