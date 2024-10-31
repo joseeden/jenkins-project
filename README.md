@@ -1,2 +1,2 @@
-# Sample Project for Deploymenty
+# Sample Project for Deployments
 
