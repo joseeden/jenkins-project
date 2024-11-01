@@ -40,7 +40,6 @@ pipeline {
                         . /tmp/app/venv/bin/activate && \
                         sudo service flaskapp restart"
                     '''
-                    
                 }
             }
         }
