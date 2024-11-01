@@ -40,19 +40,19 @@ pipeline {
                     
                     # Deploy to prodserver
                     ssh -i $MY_SSH_KEY -o StrictHostKeyChecking=no ${username}@${SERVER_IP} << EOF
-                        unzip -o /opt/myapp.zip -d /opt/app/
+                        unzip -o /opt/myapp.zip -d /tmp/app/
                         
-                        if [ ! -d "/opt/app/venv" ]; then
-                            python3 -m venv /opt/app/venv
+                        if [ ! -d "/tmp/app/venv" ]; then
+                            python3 -m venv /tmp/app/venv
                         fi
                         
-                        . /opt/app/venv/bin/activate
-                        pip install -r /opt/app/requirements.txt
+                        . /tmp/app/venv/bin/activate
+                        pip install -r /tmp/app/requirements.txt
                         
                         sudo service flaskapp restart
                     EOF
                     '''
-                    
+
                 }
             }
         }
