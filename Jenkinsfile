@@ -52,7 +52,6 @@ pipeline {
                         sudo service flaskapp restart
                     EOF
                     '''
-
                 }
             }
         }
