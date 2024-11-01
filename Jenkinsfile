@@ -10,7 +10,7 @@ pipeline {
                 // Create and activate a virtual environment, then install dependencies
                 sh '''
                 python3 -m venv venv
-                source venv/bin/activate
+                . venv/bin/activate
                 pip install -r requirements.txt
                 '''
             }
@@ -19,7 +19,7 @@ pipeline {
             steps {
                 // Activate the virtual environment and run tests
                 sh '''
-                source venv/bin/activate
+                . venv/bin/activate
                 pytest
                 '''
             }
@@ -42,13 +42,11 @@ pipeline {
                     ssh -i $MY_SSH_KEY -o StrictHostKeyChecking=no ${username}@${SERVER_IP} << EOF
                         unzip -o /opt/myapp.zip -d /opt/app/
                         
-                        # Set up virtual environment if not exists
                         if [ ! -d "/opt/app/venv" ]; then
                             python3 -m venv /opt/app/venv
                         fi
                         
-                        # Activate the virtual environment and install dependencies
-                        source /opt/app/venv/bin/activate
+                        . /opt/app/venv/bin/activate
                         pip install -r /opt/app/requirements.txt
                         
                         sudo service flaskapp restart
