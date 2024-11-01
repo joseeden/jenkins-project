@@ -30,17 +30,15 @@ pipeline {
         stage('Package and Deploy') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'ssh-key', keyFileVariable: 'MY_SSH_KEY', usernameVariable: 'username')]) {
+                    // Zip the application files and deploy to the production server
                     sh '''
                     zip -r myapp.zip ./* -x '*.git*' -x 'venv/*'
                     scp -i $MY_SSH_KEY -o StrictHostKeyChecking=no myapp.zip ${username}@${SERVER_IP}:/tmp/
                     
-                    # Deploy to prodserver
-                    ssh -i $MY_SSH_KEY -o StrictHostKeyChecking=no ${username}@${SERVER_IP} << 'EOF'
-                        unzip -o /tmp/myapp.zip -d /tmp/app/
-                        # Activate virtual environment again if needed
-                        . /tmp/app/venv/bin/activate
-                        sudo service flaskapp restart
-                    EOF
+                    # Deploy TO prod
+                    ssh -i $MY_SSH_KEY -o StrictHostKeyChecking=no ${username}@${SERVER_IP} "unzip -o /tmp/myapp.zip -d /tmp/app/ && \
+                        . /tmp/app/venv/bin/activate && \
+                        sudo service flaskapp restart"
                     '''
                 }
             }
